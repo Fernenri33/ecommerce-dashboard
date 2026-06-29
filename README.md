@@ -635,6 +635,6 @@ Cobertura:
 
 # Autor
 
-Fernando Enrique
+Fernando Portillo
 
 Prueba Técnica – E-commerce Analytics Dashboard
