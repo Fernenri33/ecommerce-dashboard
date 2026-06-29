@@ -1,6 +1,3 @@
-Claro, usa este como `frontend/README.md`:
-
-````md
 # Frontend - E-commerce Analytics Dashboard
 
 Frontend desarrollado con **Next.js**, **TypeScript**, **Tailwind CSS** y **Recharts** para visualizar KPIs de ventas del dataset Olist.
@@ -140,6 +137,3 @@ Esto permite validar correctamente filtros inválidos sin ocultar errores de neg
 ## Nota técnica
 
 El gráfico usa `dynamic import` con `ssr: false` para evitar problemas de hidratación entre Next.js y Recharts.
-
-```
-```
