@@ -1,6 +1,3 @@
-Aquí tienes un `README.md` para el backend:
-
-````md
 # E-Commerce Analytics Dashboard - Backend
 
 Backend API para un dashboard analítico de e-commerce basado en el dataset público de Olist.
