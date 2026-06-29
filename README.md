@@ -2,107 +2,25 @@
 
 ## Descripción General
 
-Este proyecto implementa un dashboard analítico utilizando el dataset público de Olist.
+Este proyecto implementa una plataforma analítica para el dataset de Olist utilizando una arquitectura de Data Warehouse compuesta por las capas Raw, Clean y Gold.
 
 La solución incluye:
 
-* Arquitectura Data Warehouse (Raw → Clean → Gold)
-* Proceso ETL para importación de archivos CSV
-* PostgreSQL
-* Backend con Express y TypeScript
-* Prisma ORM
-* Arquitectura Hexagonal
-* Frontend con Next.js
-* Docker Compose
-* Pruebas unitarias e integración
-
-La API expone métricas analíticas construidas exclusivamente sobre la capa Gold utilizando un esquema estrella (Star Schema).
+* Proceso ETL para carga y transformación de datos.
+* Data Warehouse en PostgreSQL.
+* Modelo dimensional tipo Star Schema.
+* API REST desarrollada con Express y TypeScript.
+* Prisma ORM.
+* Arquitectura Hexagonal.
+* Dashboard desarrollado con Next.js.
+* Docker Compose para despliegue local.
+* Pruebas unitarias e integración.
 
 ---
 
-# Arquitectura General
+# Tecnologías Utilizadas
 
-## Flujo de Datos
-
-```txt
-Archivos CSV
-     │
-     ▼
-   Raw
-     │
-     ▼
-  Clean
-     │
-     ▼
-Gold (Star Schema)
-     │
-     ▼
- API Express
-     │
-     ▼
- Dashboard Next.js
-```
-
----
-
-# Data Warehouse
-
-## Capa Raw
-
-Almacena los archivos CSV originales sin transformaciones.
-
-Objetivos:
-
-* Preservación de datos
-* Trazabilidad
-* Reprocesamiento
-
----
-
-## Capa Clean
-
-Capa normalizada utilizada para limpieza y transformación de datos.
-
-Objetivos:
-
-* Estandarización
-* Normalización
-* Preparación para análisis
-
----
-
-## Capa Gold
-
-Capa analítica optimizada para consultas de reportería y dashboards.
-
-### Tabla de Hechos
-
-```txt
-gold.fact_sales
-```
-
-Grano:
-
-```txt
-1 fila = 1 item de orden
-```
-
-### Dimensiones
-
-```txt
-gold.dim_date
-gold.dim_customer
-gold.dim_product
-gold.dim_order
-```
-
-Todas las consultas de la API se realizan únicamente sobre esta capa.
-
----
-
-# Backend
-
-## Tecnologías
+## Backend
 
 * Node.js
 * Express
@@ -111,58 +29,337 @@ Todas las consultas de la API se realizan únicamente sobre esta capa.
 * PostgreSQL
 * Vitest
 
+## Frontend
+
+* Next.js 16
+* React 19
+* TypeScript
+* Tailwind CSS
+* Recharts
+
+## Infraestructura
+
+* Docker
+* Docker Compose
+
 ---
 
-## Arquitectura Hexagonal
+# Arquitectura General
 
-Estructura principal:
+```txt
+                 ┌─────────────────┐
+                 │   CSV Olist     │
+                 └────────┬────────┘
+                          │
+                          ▼
+                 ┌─────────────────┐
+                 │      RAW        │
+                 └────────┬────────┘
+                          │
+                          ▼
+                 ┌─────────────────┐
+                 │     CLEAN       │
+                 └────────┬────────┘
+                          │
+                          ▼
+                 ┌─────────────────┐
+                 │      GOLD       │
+                 │  Star Schema    │
+                 └────────┬────────┘
+                          │
+                          ▼
+                 ┌─────────────────┐
+                 │    Backend      │
+                 │ Express + TS    │
+                 └────────┬────────┘
+                          │
+                          ▼
+                 ┌─────────────────┐
+                 │    Frontend     │
+                 │    Next.js      │
+                 └─────────────────┘
+```
+
+---
+
+# Arquitectura Backend
+
+El backend fue implementado utilizando Arquitectura Hexagonal.
 
 ```txt
 src
 ├── adapters
+│   └── http
+│       ├── controllers
+│       ├── routes
+│       └── validators
+│
 ├── application
+│   └── use-cases
+│
 ├── domain
+│   └── repositories
+│
 └── infrastructure
+    ├── database
+    ├── repositories
+    └── seed
 ```
+
+## Responsabilidades
 
 ### Adapters
 
-Responsables de exponer la API HTTP.
-
-Ejemplos:
-
-* Controllers
-* Routes
-* Validators
+Exponen la API HTTP.
 
 ### Application
 
-Contiene los casos de uso y reglas de negocio.
+Contiene casos de uso y lógica de aplicación.
 
 ### Domain
 
-Define contratos y abstracciones del sistema.
+Define contratos y abstracciones.
 
 ### Infrastructure
 
-Implementaciones concretas:
-
-* Prisma
-* ETL
-* Repositorios
-* Base de datos
+Implementaciones concretas de Prisma, ETL y acceso a datos.
 
 ---
 
-# API
+# Modelo Estrella (Gold Layer)
+
+La capa Gold fue diseñada utilizando un esquema estrella para optimizar consultas analíticas.
+
+## Grano
+
+```txt
+1 fila = 1 item de orden
+(order_id + order_item_id)
+```
+
+---
+
+## Tabla de Hechos
+
+| Tabla           | Descripción                        |
+| --------------- | ---------------------------------- |
+| gold.fact_sales | Métricas de ventas a nivel de item |
+
+---
+
+## Dimensiones
+
+| Tabla             | Descripción          |
+| ----------------- | -------------------- |
+| gold.dim_date     | Información temporal |
+| gold.dim_customer | Cliente y ubicación  |
+| gold.dim_product  | Producto y categoría |
+| gold.dim_order    | Estado de orden      |
+
+---
+
+## Diagrama
+
+```txt
+                 dim_date
+                     |
+                     |
+dim_customer --- fact_sales --- dim_product
+                     |
+                     |
+                 dim_order
+```
+
+---
+
+# Tablas Cargadas en Raw
+
+Las siguientes tablas se cargan directamente desde los archivos CSV originales.
+
+| CSV                                   | Tabla Raw                |
+| ------------------------------------- | ------------------------ |
+| olist_customers_dataset.csv           | raw.customers            |
+| olist_orders_dataset.csv              | raw.orders               |
+| olist_order_items_dataset.csv         | raw.order_items          |
+| olist_order_payments_dataset.csv      | raw.order_payments       |
+| olist_products_dataset.csv            | raw.products             |
+| product_category_name_translation.csv | raw.category_translation |
+
+---
+
+# Reglas de Limpieza (Clean)
+
+Durante la carga hacia la capa Clean se aplican las siguientes transformaciones:
+
+* Conversión de tipos de datos.
+* Normalización de fechas.
+* Estandarización de claves.
+* Preparación de relaciones entre entidades.
+* Resolución de categorías en inglés.
+* Eliminación de registros inválidos.
+* Preparación de datos para reportería.
+
+---
+
+# Regla de Asignación de Payment Value
+
+## Problema
+
+El dataset original almacena pagos a nivel de orden.
+
+```txt
+order_payments
+```
+
+Sin embargo, la tabla de hechos trabaja a nivel de item.
+
+```txt
+fact_sales
+```
+
+---
+
+## Solución
+
+El valor pagado fue distribuido proporcionalmente entre los productos de cada orden.
+
+### Fórmula
+
+```txt
+payment_value_allocated =
+payment_value *
+(item_price / total_order_items_price)
+```
+
+---
+
+## Ejemplo
+
+Orden:
+
+```txt
+Pago total = 100
+```
+
+Items:
+
+```txt
+Producto A = 20
+Producto B = 30
+Producto C = 50
+```
+
+Asignación:
+
+```txt
+Producto A = 20
+Producto B = 30
+Producto C = 50
+```
+
+De esta forma se evita duplicar ingresos al trabajar a nivel item.
+
+---
+
+# KPIs Implementados
+
+## GMV
+
+Valor bruto de mercancía vendida.
+
+```sql
+SUM(item_price)
+```
+
+---
+
+## Shipping
+
+Costo total de envío.
+
+```sql
+SUM(freight_value)
+```
+
+---
+
+## Revenue
+
+Ingresos reales asignados por item.
+
+```sql
+SUM(payment_value_allocated)
+```
+
+---
+
+## Orders
+
+Cantidad de órdenes únicas.
+
+```sql
+COUNT(DISTINCT order_id)
+```
+
+---
+
+## Items
+
+Cantidad total de productos vendidos.
+
+```sql
+COUNT(order_item_id)
+```
+
+---
+
+## AOV
+
+Average Order Value.
+
+```txt
+Revenue / Orders
+```
+
+---
+
+## Items Per Order
+
+Promedio de productos por orden.
+
+```txt
+Items / Orders
+```
+
+---
+
+## Cancellation Rate
+
+Porcentaje de órdenes canceladas.
+
+```txt
+Canceled Orders / Total Orders
+```
+
+---
+
+## On Time Delivery Rate
+
+Porcentaje de entregas realizadas a tiempo.
+
+```txt
+On Time Deliveries / Delivered Orders
+```
+
+---
+
+# Endpoints
 
 ## Health Check
 
 ```http
 GET /health
 ```
-
-Permite verificar el estado de la aplicación.
 
 ---
 
@@ -180,22 +377,6 @@ to
 status
 state
 category
-```
-
-Respuesta:
-
-```json
-{
-  "gmv": 0,
-  "shipping": 0,
-  "revenue": 0,
-  "orders": 0,
-  "items": 0,
-  "aov": 0,
-  "itemsPerOrder": 0,
-  "cancellationRate": 0,
-  "onTimeDeliveryRate": 0
-}
 ```
 
 ---
@@ -217,11 +398,9 @@ state
 category
 ```
 
-Permite visualizar la evolución de ingresos por día o semana.
-
 ---
 
-## Ranking de Productos
+## Product Ranking
 
 ```http
 GET /rankings/products
@@ -239,13 +418,6 @@ state
 category
 ```
 
-Métricas disponibles:
-
-```txt
-gmv
-revenue
-```
-
 ---
 
 # Validaciones
@@ -256,17 +428,10 @@ Rango permitido:
 
 ```txt
 2016-01-01
-hasta
 2018-12-31
 ```
 
-Ejemplos de validaciones:
-
-* Formato inválido
-* Rango invertido
-* Fechas fuera del rango del dataset
-
-Ejemplo de respuesta:
+Ejemplo:
 
 ```json
 {
@@ -276,43 +441,7 @@ Ejemplo de respuesta:
 
 ---
 
-# ETL
-
-El proceso ETL se encuentra en:
-
-```txt
-src/infrastructure/seed/run-etl.ts
-```
-
-Ejecución:
-
-```bash
-npm run etl
-```
-
-El proceso realiza:
-
-1. Creación de esquemas.
-2. Creación de tablas Raw.
-3. Creación de tablas Clean.
-4. Creación de tablas Gold.
-5. Importación de archivos CSV.
-6. Carga de dimensiones.
-7. Carga de tabla de hechos.
-
----
-
 # Frontend
-
-## Tecnologías
-
-* Next.js 16
-* React 19
-* TypeScript
-* Tailwind CSS
-* Recharts
-
----
 
 ## Funcionalidades
 
@@ -321,69 +450,36 @@ El proceso realiza:
 * Fecha inicial
 * Fecha final
 * Estado de orden
-* Estado del cliente
-* Categoría de producto
-* Métrica del ranking
-* Granularidad del gráfico
-
----
+* Estado de cliente
+* Categoría
+* Métrica de ranking
+* Granularidad
 
 ### KPIs
-
-Se muestran los siguientes indicadores:
 
 * GMV
 * Revenue
 * Shipping
 * Orders
 * AOV
-* Items por Orden
-* Tasa de Cancelación
-* Entregas a Tiempo
-
----
+* Items Per Order
+* Cancellation Rate
+* On Time Delivery Rate
 
 ### Revenue Trend
 
-Gráfico de evolución temporal de ingresos.
-
-Soporta agrupación:
-
-```txt
-day
-week
-```
-
----
+Visualización temporal de ingresos.
 
 ### Ranking de Productos
 
-Tabla con los productos más relevantes según:
+Ranking por:
 
-```txt
-GMV
-Revenue
-```
+* GMV
+* Revenue
 
 ---
 
-# Docker
-
-El proyecto incluye contenedores para:
-
-* PostgreSQL
-* Backend
-* Frontend
-
-Levantar servicios:
-
-```bash
-docker compose up
-```
-
----
-
-# Ejecución Local
+# Setup
 
 ## Backend
 
@@ -393,6 +489,12 @@ cd backend
 npm install
 
 npm run dev
+```
+
+Backend:
+
+```txt
+http://localhost:3000
 ```
 
 ---
@@ -407,69 +509,132 @@ npm install
 npm run dev -- --port 3001
 ```
 
+Frontend:
+
+```txt
+http://localhost:3001
+```
+
 ---
 
-# Pruebas
+# ETL
 
-Framework utilizado:
+Ejecutar:
+
+```bash
+npm run etl
+```
+
+El proceso:
+
+1. Crea esquemas.
+2. Crea tablas Raw.
+3. Crea tablas Clean.
+4. Crea tablas Gold.
+5. Importa CSV.
+6. Carga dimensiones.
+7. Carga tabla de hechos.
+
+---
+
+# Docker
+
+Levantar servicios:
+
+```bash
+docker compose up
+```
+
+Servicios incluidos:
+
+* PostgreSQL
+* Backend
+* Frontend
+
+---
+
+# Testing
+
+Framework:
 
 ```txt
 Vitest
 ```
 
-Ejecución:
+Ejecutar:
 
 ```bash
 npm test
 ```
 
-Cobertura principal:
+Cobertura:
 
-* Validación de fechas
-* Casos de uso KPI
-* Casos de uso Ranking
-* Integración de rutas
-
----
-
-# Decisiones Técnicas
-
-## ¿Por qué Star Schema?
-
-El objetivo principal es analítico y no transaccional.
-
-Beneficios:
-
-* Consultas agregadas más rápidas
-* Menor complejidad en reportería
-* Escalabilidad para análisis
+* Validación de fechas.
+* Casos de uso KPI.
+* Casos de uso Ranking.
+* Integración de rutas.
 
 ---
 
-## ¿Por qué Arquitectura Hexagonal?
+# Decisiones Técnicas y Tradeoffs
 
-Beneficios:
+## Star Schema
 
-* Separación de responsabilidades
-* Facilidad de pruebas
-* Independencia de infraestructura
-* Mejor mantenibilidad
+### Ventajas
+
+* Consultas rápidas.
+* Agregaciones eficientes.
+* Mejor experiencia analítica.
+
+### Tradeoff
+
+* Redundancia controlada en dimensiones.
 
 ---
 
-## ¿Por qué Prisma?
+## Prisma
 
-Beneficios:
+### Ventajas
 
-* Consultas tipadas
-* Integración sencilla con PostgreSQL
-* Mejor experiencia de desarrollo
-* Menor complejidad de acceso a datos
+* Tipado fuerte.
+* Productividad.
+* Integración sencilla.
+
+### Tradeoff
+
+* Algunas consultas analíticas complejas requirieron SQL nativo mediante `queryRaw`.
+
+---
+
+## Arquitectura Hexagonal
+
+### Ventajas
+
+* Separación de responsabilidades.
+* Alta mantenibilidad.
+* Fácil testing.
+
+### Tradeoff
+
+* Mayor cantidad de archivos para proyectos pequeños.
+
+---
+
+## ETL Separado de la API
+
+### Ventajas
+
+* Independencia entre procesamiento y consumo.
+* Reprocesamiento sencillo.
+
+### Tradeoff
+
+* Requiere una carga inicial antes de exponer datos.
 
 ---
 
 # Autor
 
-Fernando Portillo
+Fernando Enrique
 
 Prueba Técnica – E-commerce Analytics Dashboard
