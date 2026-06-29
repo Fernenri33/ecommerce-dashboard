@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/infrastructure/database/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["raw", "clean", "gold"]
+}
+
+model FactSales {
+  orderId               String   @map("order_id")
+  orderItemId           Int      @map("order_item_id")
+  dateId                Int      @map("date_id")
+  customerId            String   @map("customer_id")
+  productId             String?  @map("product_id")
+  itemPrice             Decimal  @map("item_price")
+  freightValue          Decimal  @map("freight_value")
+  paymentValueAllocated Decimal  @map("payment_value_allocated")
+  isDelivered           Boolean  @map("is_delivered")
+  isCanceled            Boolean  @map("is_canceled")
+  isOnTime              Boolean? @map("is_on_time")
+
+  date     DimDate     @relation(fields: [dateId], references: [dateId])
+  customer DimCustomer @relation(fields: [customerId], references: [customerId])
+  product  DimProduct? @relation(fields: [productId], references: [productId])
+  order    DimOrder    @relation(fields: [orderId], references: [orderId])
+
+  @@id([orderId, orderItemId])
+  @@map("fact_sales")
+  @@schema("gold")
+}
+
+model DimDate {
+  dateId Int      @id @map("date_id")
+  date   DateTime @map("date")
+  year   Int
+  month  Int
+  day    Int
+  week   Int?
+
+  sales FactSales[]
+
+  @@map("dim_date")
+  @@schema("gold")
+}
+
+model DimCustomer {
+  customerId       String @id @map("customer_id")
+  customerUniqueId String @map("customer_unique_id")
+  city             String?
+  state            String?
+
+  sales FactSales[]
+
+  @@map("dim_customer")
+  @@schema("gold")
+}
+
+model DimProduct {
+  productId       String  @id @map("product_id")
+  categoryName    String? @map("product_category_name")
+  categoryEnglish String? @map("product_category_name_english")
+
+  sales FactSales[]
+
+  @@map("dim_product")
+  @@schema("gold")
+}
+
+model DimOrder {
+  orderId                  String    @id @map("order_id")
+  status                   String
+  orderPurchaseTimestamp   DateTime? @map("order_purchase_timestamp")
+  orderApprovedAt          DateTime? @map("order_approved_at")
+  orderDeliveredCustomerAt DateTime? @map("order_delivered_customer_date")
+  orderEstimatedDeliveryAt DateTime? @map("order_estimated_delivery_date")
+
+  sales FactSales[]
+
+  @@map("dim_order")
+  @@schema("gold")
+}

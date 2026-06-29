@@ -1,0 +1,8 @@
+node_modules
+.next
+out
+coverage
+.git
+.vscode
+.env.local
+npm-debug.log

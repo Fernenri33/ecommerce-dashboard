@@ -1,0 +1,16 @@
+node_modules
+dist
+coverage
+.git
+.vscode
+.env
+npm-debug.log
+
+data
+dataset
+datasets
+csv
+*.csv
+*.zip
+*.xlsx
+*.parquet
